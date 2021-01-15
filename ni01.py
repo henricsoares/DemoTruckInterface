@@ -1,13 +1,19 @@
 import tkinter as tk
 import math
-import keyboard  # noqa: F401
-from time import sleep  # noqa: F401
+import keyboard
+from time import sleep, time
 from PIL import ImageTk, Image
 import random  # noqa: F401
 
 
 class App(tk.Frame):
     def __init__(self, master):
+        self.rArrowAux = False
+        self.rArrowAuxx = False
+        self.lArrowAux = False
+        self.lArrowAuxx = False
+        self.arrowTime = time()
+        self.arrowTimee = time()
         tk.Frame.__init__(self, master)
         master.winfo_toplevel().title("Python Interfaces")
         self.mainFrame = tk.Frame(master)
@@ -48,25 +54,25 @@ class App(tk.Frame):
                                  (self.vDim/2) - .48*self.vDim,
                                  (self.hDim/2) + .48*self.hDim,
                                  (self.vDim/2) + .48*self.vDim,
-                                 fill='black', outline='white',
+                                 fill='', outline='white',
                                  width=3)
         self.canvas1.create_oval((self.hDim/2) - .2*self.hDim,
                                  (self.vDim/2) - .2*self.vDim,
                                  (self.hDim/2) + .2*self.hDim,
                                  (self.vDim/2) + .2*self.vDim,
-                                 fill='black',
+                                 fill='',
                                  outline='white', width=3)
         self.canvas3.create_oval((self.hDim/2) - .48*self.hDim,
                                  (self.vDim/2) - .48*self.vDim,
                                  (self.hDim/2) + .48*self.hDim,
                                  (self.vDim/2) + .48*self.vDim,
-                                 fill='black', outline='white',
+                                 fill='', outline='white',
                                  width=3)
         self.canvas3.create_oval((self.hDim/2) - .2*self.hDim,
                                  (self.vDim/2) - .2*self.vDim,
                                  (self.hDim/2) + .2*self.hDim,
                                  (self.vDim/2) + .2*self.vDim,
-                                 fill='black',
+                                 fill='',
                                  outline='white', width=3)
         self.velValue = 0
         self.velHolder = self.canvas1.create_text(self.hDim/2, self.vDim/2,
@@ -131,9 +137,11 @@ class App(tk.Frame):
                          .95*self.hDim2,
                          self.vDim2]
         self.rLane = self.canvas2.create_polygon(self.rLanePos,
-                                                 fill='silver', width=15)
+                                                 fill='silver',
+                                                 width=self.hDim2*.02)
         self.lLane = self.canvas2.create_polygon(self.lLanePos,
-                                                 fill='silver', width=15)
+                                                 fill='silver',
+                                                 width=self.hDim2*.02)
         self.img = Image.open('truck.png')
         self.truckPos = [self.hDim2/2, .65*self.vDim2]
         self.img = self.img.resize((int(self.hDim2*4/10),
@@ -171,10 +179,47 @@ class App(tk.Frame):
                                                     font=('Helvetica',
                                                           '11',
                                                           'bold'))
-
-        '''self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
+        self.leftArrow = self.canvas2.create_polygon([.1*self.hDim2,
+                                                     .2*self.vDim2],
+                                                     [.15*self.hDim2,
+                                                     .1*self.vDim2],
+                                                     [.15*self.hDim2,
+                                                     .15*self.vDim2],
+                                                     [.2*self.hDim2,
+                                                     .15*self.vDim2],
+                                                     [.2*self.hDim2,
+                                                     .25*self.vDim2],
+                                                     [.15*self.hDim2,
+                                                     .25*self.vDim2],
+                                                     [.15*self.hDim2,
+                                                     .3*self.vDim2],
+                                                     [.1*self.hDim2,
+                                                     .2*self.vDim2],
+                                                     fill='green',
+                                                     width=self.hDim2*.005)
+        self.rightArrow = self.canvas2.create_polygon([.9*self.hDim2,
+                                                      .2*self.vDim2],
+                                                      [.85*self.hDim2,
+                                                      .1*self.vDim2],
+                                                      [.85*self.hDim2,
+                                                      .15*self.vDim2],
+                                                      [.8*self.hDim2,
+                                                      .15*self.vDim2],
+                                                      [.8*self.hDim2,
+                                                      .25*self.vDim2],
+                                                      [.85*self.hDim2,
+                                                      .25*self.vDim2],
+                                                      [.85*self.hDim2,
+                                                      .3*self.vDim2],
+                                                      [.9*self.hDim2,
+                                                      .2*self.vDim2],
+                                                      fill='green',
+                                                      width=self.hDim2*.005)
+        self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.velSignValue, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.Unit, state=tk.HIDDEN)'''
+        self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.leftArrow, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.rightArrow, state=tk.HIDDEN)
 
     def rotate(self, points, angle, center):
         angle = math.radians(angle)
@@ -223,6 +268,51 @@ class App(tk.Frame):
             self.canvas1.itemconfigure(self.velHolder,
                                        text=int(self.angle/1.8))
 
+    def arrows(self, opt='verify'):
+        if opt == 'right':
+            pass
+        elif opt == 'left':
+            pass
+        if opt == 'verify':
+            if self.rArrowAux or self.lArrowAux:
+                self.arrowTimee = time()
+                if (self.arrowTimee - self.arrowTime) >= .5:
+                    if self.rArrowAux:
+                        self.rArrowAuxx = True
+                    elif self.lArrowAux:
+                        self.lArrowAuxx = True
+                    '''if not self.blinkauxx:
+                        self.bTimeee = time()
+                    self.warnings('verif', 'blink')'''
+                if self.rArrowAux and self.rArrowAuxx:
+                    # print('right arrow')
+                    state = self.canvas2.itemconfig(self.rightArrow,
+                                                    'state')[4]
+                    if state == 'hidden':
+                        self.canvas2.itemconfigure(self.rightArrow,
+                                                   state=tk.NORMAL)
+                        # print(state)
+                    elif state == 'normal':
+                        self.canvas2.itemconfigure(self.rightArrow,
+                                                   state=tk.HIDDEN)
+                        # print(state)
+                    self.arrowTime = self.arrowTimee
+                    self.rArrowAuxx = False
+                elif self.lArrowAux and self.lArrowAuxx:
+                    # print('left arrow')
+                    state = self.canvas2.itemconfig(self.leftArrow,
+                                                    'state')[4]
+                    if state == 'hidden':
+                        self.canvas2.itemconfigure(self.leftArrow,
+                                                   state=tk.NORMAL)
+                        # print(state)
+                    elif state == 'normal':
+                        self.canvas2.itemconfigure(self.leftArrow,
+                                                   state=tk.HIDDEN)
+                        # print(state)
+                    self.arrowTime = self.arrowTimee
+                    self.lArrowAuxx = False
+
 
 root = tk.Tk()
 app = App(root)
@@ -246,27 +336,65 @@ while aux:
                            app.lLanePos[3],
                            app.lLanePos[4]-newRLPos,
                            app.lLanePos[5])'''
-        '''if keyboard.is_pressed('d'):
-            app.truckPos[0] = .73*app.hDim2
+        if keyboard.is_pressed('d'):
+            '''app.truckPos[0] = .73*app.hDim2
             # app.truckPos[0] += 1
             # print(app.truckPos[0])
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            app.vAngle('inc')
+            # app.vAngle('inc')
             app.canvas2.itemconfig(app.rLane, fill='red')
             app.canvas2.itemconfig(app.lLane, fill='silver')
             app.canvas2.itemconfig(app.ldwHolder,
                                    text='Lane departure - right side')
+            app.canvas2.itemconfig(app.ldwHolder,
+                                   state=tk.NORMAL)'''
+            if not app.rArrowAux:
+                # print('right')
+                if app.lArrowAux:
+                    app.lArrowAuxx = False
+                    app.lArrowAux = False
+                    app.canvas2.itemconfigure(app.leftArrow, state=tk.HIDDEN)
+                app.rArrowAux = True
+                app.arrowTime = time()
         elif keyboard.is_pressed('a'):
-            app.truckPos[0] = .27*app.hDim2
+            '''app.truckPos[0] = .27*app.hDim2
             # app.truckPos[0] -= 1
             # print(app.truckPos[0])
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            app.vAngle('dec')
+            # app.vAngle('dec')
             app.canvas2.itemconfig(app.lLane, fill='red')
             app.canvas2.itemconfig(app.rLane, fill='silver')
             app.canvas2.itemconfig(app.ldwHolder,
                                    text='Lane departure - left side')
-        sleep(.1)'''
+            app.canvas2.itemconfig(app.ldwHolder,
+                                   state=tk.NORMAL)'''
+            if not app.lArrowAux:
+                # print('left')
+                if app.rArrowAux:
+                    app.rArrowAuxx = False
+                    app.rArrowAux = False
+                    app.canvas2.itemconfigure(app.rightArrow, state=tk.HIDDEN)
+                app.lArrowAux = True
+                app.arrowTime = time()
+        elif keyboard.is_pressed('s'):
+            '''app.truckPos[0] = .5*app.hDim2
+            # app.truckPos[0] -= 1
+            # print(app.truckPos[0])
+            app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
+            app.canvas2.itemconfig(app.lLane, fill='silver')
+            app.canvas2.itemconfig(app.rLane, fill='silver')
+            app.canvas2.itemconfig(app.ldwHolder,
+                                   state=tk.HIDDEN)'''
+            if app.rArrowAux or app.lArrowAux:
+                # print('disabled')
+                app.canvas2.itemconfigure(app.leftArrow, state=tk.HIDDEN)
+                app.canvas2.itemconfigure(app.rightArrow, state=tk.HIDDEN)
+                app.lArrowAux = False
+                app.lArrowAuxx = False
+                app.rArrowAux = False
+                app.rArrowAuxx = False
+        app.arrows('verify')
+        # sleep(.1)
         root.update()
     except Exception as e:  # noqa: F841
         print(e)
