@@ -4,10 +4,16 @@ import keyboard
 from time import sleep, time
 from PIL import ImageTk, Image
 import random  # noqa: F401
+import datetime
+# import canReadCamera as canrd  # noqa: F401
 
 
 class App(tk.Frame):
     def __init__(self, master):
+        self.now = datetime.datetime.now()
+        self._time = ['{:02d}'.format(self.now.hour),
+                      '{:02d}'.format(self.now.minute)]
+        self.extTemp = 25
         self.rArrowAux = False
         self.rArrowAuxx = False
         self.lArrowAux = False
@@ -35,14 +41,14 @@ class App(tk.Frame):
         self.hDim2 = int(self.canvas2['width'])
         self.vDim2 = int(self.canvas2['height'])
         self.bg = Image.open('bg.png')
-        self.bg = self.bg.resize((2*self.hDim2, 2*(self.vDim2)),
+        self.bg = self.bg.resize((2*self.hDim2, (self.vDim2)),
                                  Image.ANTIALIAS)
         self.bg = ImageTk.PhotoImage(self.bg)
-        self.canvas1.create_image((0, 0),
+        self.canvas1.create_image((0, .73*self.vDim2),
                                   image=self.bg)
-        self.canvas2.create_image((0, 0),
+        self.canvas2.create_image((0, .73*self.vDim2),
                                   image=self.bg)
-        self.canvas3.create_image((0, 0),
+        self.canvas3.create_image((0, .73*self.vDim2),
                                   image=self.bg)
         self.canvas1.grid(column=0, row=0)
         self.canvas2.grid(column=1, row=0)
@@ -124,32 +130,13 @@ class App(tk.Frame):
         self.p2 = self.canvas3.create_line(self.pointsP2, fill='red',
                                            width=9, smooth=True)
         # canvas 2
-        self.lLanePos = [.45*self.hDim2,
-                         self.vDim2/2,
-                         0*self.hDim2,
-                         self.vDim2,
-                         .05*self.hDim2,
-                         self.vDim2]
-        self.rLanePos = [.55*self.hDim2,
-                         self.vDim2/2,
-                         1*self.hDim2,
-                         self.vDim2,
-                         .95*self.hDim2,
-                         self.vDim2]
-        self.rLane = self.canvas2.create_polygon(self.rLanePos,
-                                                 fill='silver',
-                                                 width=self.hDim2*.02)
-        self.lLane = self.canvas2.create_polygon(self.lLanePos,
-                                                 fill='silver',
-                                                 width=self.hDim2*.02)
         self.img = Image.open('truck.png')
         self.truckPos = [self.hDim2/2, .65*self.vDim2]
         self.img = self.img.resize((int(self.hDim2*4/10),
                                     int(self.hDim2*4/10)),
                                    Image.ANTIALIAS)
         self.img = ImageTk.PhotoImage(self.img)
-        self.truck = self.canvas2.create_image(self.truckPos,
-                                               image=self.img)
+        self.meter = round(self.img.width()/.91, 2)
         self.ldwHolder = self.canvas2.create_text(self.hDim2/2,
                                                   self.vDim*.95,
                                                   justify=tk.CENTER,
@@ -215,6 +202,40 @@ class App(tk.Frame):
                                                       .2*self.vDim2],
                                                       fill='green',
                                                       width=self.hDim2*.005)
+        self.lLanePos = [(self.hDim2/2)-self.meter,
+                         self.vDim2,
+                         (self.hDim2/2)-(self.meter-.1*self.meter),
+                         self.vDim2,
+                         (self.hDim2/2)-(self.meter-.8*self.meter),
+                         self.vDim2/2]
+        self.rLanePos = [(self.hDim2/2)+self.meter,
+                         self.vDim2,
+                         (self.hDim2/2)+(self.meter-.1*self.meter),
+                         self.vDim2,
+                         (self.hDim2/2)+(self.meter-.8*self.meter),
+                         self.vDim2/2]
+        self.rLane = self.canvas2.create_polygon(self.rLanePos,
+                                                 fill='silver',
+                                                 width=self.hDim2*.02)
+        self.lLane = self.canvas2.create_polygon(self.lLanePos,
+                                                 fill='silver',
+                                                 width=self.hDim2*.02)
+        self.truck = self.canvas2.create_image(self.truckPos,
+                                               image=self.img)
+        self.clock = self.canvas2.create_text(.25*self.hDim2,
+                                              .05*self.vDim2,
+                                              fill='white',
+                                              text=self._time[0] +
+                                                   ":"+self._time[1],
+                                              font=('Helvetica',
+                                                    '18'))
+        self.extTempHolder = self.canvas2.create_text(.75*self.hDim2,
+                                                      .05*self.vDim2,
+                                                      fill='white',
+                                                      text=str(self.extTemp) +
+                                                           ' ºC',
+                                                      font=('Helvetica',
+                                                            '18'))
         self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.velSignValue, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
@@ -313,12 +334,51 @@ class App(tk.Frame):
                     self.arrowTime = self.arrowTimee
                     self.lArrowAuxx = False
 
+    def moveLanes(self, right, left):
+        right, left = right * self.meter, left * self.meter
+        lLanePos = [.5*self.hDim2 + left,
+                    self.vDim2,
+                    .5*self.hDim2 + left + .1*self.meter,
+                    self.vDim2,
+                    .5*self.hDim2 + left + .8*self.meter,
+                    .5*self.vDim2]
+        rLanePos = [.5*self.hDim2 + right,
+                    self.vDim2,
+                    .5*self.hDim2 + right - .1*self.meter,
+                    self.vDim2,
+                    .5*self.hDim2 + right - .8*self.meter,
+                    .5*self.vDim2]
+        self.canvas2.coords(self.rLane,
+                            rLanePos[0],
+                            rLanePos[1],
+                            rLanePos[2],
+                            rLanePos[3],
+                            rLanePos[4],
+                            rLanePos[5])
+        self.canvas2.coords(self.lLane,
+                            lLanePos[0],
+                            lLanePos[1],
+                            lLanePos[2],
+                            lLanePos[3],
+                            lLanePos[4],
+                            lLanePos[5])
 
+
+'''conection = (canrd.connect())
+while not conection[0]:
+    print('Trying to connect...')
+    conection = (canrd.connect())
+    sleep(1)
+print(conection[1])
+conection = conection[0]'''
 root = tk.Tk()
 app = App(root)
 aux = True
 while aux:
     try:
+        right = float(input('right'))
+        left = float(input('left'))
+        app.moveLanes(right, left)
         '''newPos = random.uniform(.9*app.truckPos[0], 1.1*app.truckPos[0])
         newRLPos = random.uniform(25, 50)
         app.canvas2.coords(app.truck, newPos, app.truckPos[1])
@@ -338,63 +398,115 @@ while aux:
                            app.lLanePos[5])'''
         if keyboard.is_pressed('d'):
             '''app.truckPos[0] = .73*app.hDim2
-            # app.truckPos[0] += 1
-            # print(app.truckPos[0])
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            # app.vAngle('inc')
             app.canvas2.itemconfig(app.rLane, fill='red')
             app.canvas2.itemconfig(app.lLane, fill='silver')
             app.canvas2.itemconfig(app.ldwHolder,
                                    text='Lane departure - right side')
             app.canvas2.itemconfig(app.ldwHolder,
                                    state=tk.NORMAL)'''
-            if not app.rArrowAux:
+            '''if not app.rArrowAux:
                 # print('right')
                 if app.lArrowAux:
                     app.lArrowAuxx = False
                     app.lArrowAux = False
                     app.canvas2.itemconfigure(app.leftArrow, state=tk.HIDDEN)
                 app.rArrowAux = True
-                app.arrowTime = time()
+                app.arrowTime = time()'''
+            app.rLanePos[0] += 25
+            app.rLanePos[2] += 25
+            app.rLanePos[4] += 25
+            app.lLanePos[0] -= 25
+            app.lLanePos[2] -= 25
+            app.lLanePos[4] -= 25
+            app.canvas2.coords(app.rLane,
+                               app.rLanePos[0],
+                               app.rLanePos[1],
+                               app.rLanePos[2],
+                               app.rLanePos[3],
+                               app.rLanePos[4],
+                               app.rLanePos[5])
+            app.canvas2.coords(app.lLane,
+                               app.lLanePos[0],
+                               app.lLanePos[1],
+                               app.lLanePos[2],
+                               app.lLanePos[3],
+                               app.lLanePos[4],
+                               app.lLanePos[5])
         elif keyboard.is_pressed('a'):
             '''app.truckPos[0] = .27*app.hDim2
-            # app.truckPos[0] -= 1
-            # print(app.truckPos[0])
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            # app.vAngle('dec')
             app.canvas2.itemconfig(app.lLane, fill='red')
             app.canvas2.itemconfig(app.rLane, fill='silver')
             app.canvas2.itemconfig(app.ldwHolder,
                                    text='Lane departure - left side')
             app.canvas2.itemconfig(app.ldwHolder,
                                    state=tk.NORMAL)'''
-            if not app.lArrowAux:
+            '''if not app.lArrowAux:
                 # print('left')
                 if app.rArrowAux:
                     app.rArrowAuxx = False
                     app.rArrowAux = False
                     app.canvas2.itemconfigure(app.rightArrow, state=tk.HIDDEN)
                 app.lArrowAux = True
-                app.arrowTime = time()
+                app.arrowTime = time()'''
+            app.rLanePos[0] -= 25
+            app.rLanePos[2] -= 25
+            app.rLanePos[4] -= 25
+            app.lLanePos[0] += 25
+            app.lLanePos[2] += 25
+            app.lLanePos[4] += 25
+            app.canvas2.coords(app.rLane,
+                               app.rLanePos[0],
+                               app.rLanePos[1],
+                               app.rLanePos[2],
+                               app.rLanePos[3],
+                               app.rLanePos[4],
+                               app.rLanePos[5])
+            app.canvas2.coords(app.lLane,
+                               app.lLanePos[0],
+                               app.lLanePos[1],
+                               app.lLanePos[2],
+                               app.lLanePos[3],
+                               app.lLanePos[4],
+                               app.lLanePos[5])
         elif keyboard.is_pressed('s'):
             '''app.truckPos[0] = .5*app.hDim2
-            # app.truckPos[0] -= 1
-            # print(app.truckPos[0])
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
             app.canvas2.itemconfig(app.lLane, fill='silver')
             app.canvas2.itemconfig(app.rLane, fill='silver')
             app.canvas2.itemconfig(app.ldwHolder,
                                    state=tk.HIDDEN)'''
-            if app.rArrowAux or app.lArrowAux:
+            '''if app.rArrowAux or app.lArrowAux:
                 # print('disabled')
                 app.canvas2.itemconfigure(app.leftArrow, state=tk.HIDDEN)
                 app.canvas2.itemconfigure(app.rightArrow, state=tk.HIDDEN)
                 app.lArrowAux = False
                 app.lArrowAuxx = False
                 app.rArrowAux = False
-                app.rArrowAuxx = False
-        app.arrows('verify')
-        # sleep(.1)
+                app.rArrowAuxx = False'''
+            app.rLanePos[0] = (app.hDim2/2)+app.meter
+            app.rLanePos[2] = (app.hDim2/2)+.9*app.meter
+            app.rLanePos[4] = (app.hDim2/2)+.2*app.meter
+            app.lLanePos[0] = (app.hDim2/2)-app.meter
+            app.lLanePos[2] = (app.hDim2/2)-.9*app.meter
+            app.lLanePos[4] = (app.hDim2/2)-.2*app.meter
+            app.canvas2.coords(app.rLane,
+                               app.rLanePos[0],
+                               app.rLanePos[1],
+                               app.rLanePos[2],
+                               app.rLanePos[3],
+                               app.rLanePos[4],
+                               app.rLanePos[5])
+            app.canvas2.coords(app.lLane,
+                               app.lLanePos[0],
+                               app.lLanePos[1],
+                               app.lLanePos[2],
+                               app.lLanePos[3],
+                               app.lLanePos[4],
+                               app.lLanePos[5])
+        # app.arrows('verify')
+        sleep(.1)
         root.update()
     except Exception as e:  # noqa: F841
         print(e)
