@@ -14,16 +14,18 @@ class App(tk.Frame):
         self._time = ['{:02d}'.format(self.now.hour),
                       '{:02d}'.format(self.now.minute)]
         self.extTemp = 25
-        self.rArrowAux = False
-        self.rArrowAuxx = False
-        self.lArrowAux = False
-        self.lArrowAuxx = False
-        self.arrowTime = time()
-        self.arrowTimee = time()
+        self.tsRightAux = False
+        self.tsRightAuxx = False
+        self.tsLeftAux = False
+        self.tsLeftAuxx = False
+        self.tsTime = time()
+        self.tsTimee = time()
+        self.right = .91
+        self.left = .91
         tk.Frame.__init__(self, master)
         master.winfo_toplevel().title("Python Interfaces")
-        self.mainFrame = tk.Frame(master)
-        self.mainFrame.pack(fill=tk.BOTH, expand=True)
+        self.mainFrame = tk.Frame(master, background='black')
+        self.mainFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.frameW, self.framH = (self.mainFrame.winfo_screenwidth()), \
                                   (self.mainFrame.winfo_screenheight())
         self.canvas1 = tk.Canvas(self.mainFrame, width=(3/10)*self.frameW,
@@ -82,7 +84,7 @@ class App(tk.Frame):
                                  outline='white', width=3)
         self.velValue = 0
         self.velHolder = self.canvas1.create_text(self.hDim/2, self.vDim/2,
-                                                  text=self.velValue,
+                                                  text='',
                                                   fill='white',
                                                   font=('Helvetica', '36',
                                                         'bold'))
@@ -131,16 +133,18 @@ class App(tk.Frame):
                                            width=9, smooth=True)
         # canvas 2
         self.img = Image.open('truck.png')
-        self.truckPos = [self.hDim2/2, .65*self.vDim2]
-        self.img = self.img.resize((int(self.hDim2*4/10),
-                                    int(self.hDim2*4/10)),
+        self.truckPos = [self.hDim2/2, .7*self.vDim2]
+        self.img = self.img.resize((int(self.hDim2*3/10),
+                                    int(self.hDim2*3/10)),
                                    Image.ANTIALIAS)
         self.img = ImageTk.PhotoImage(self.img)
-        self.meter = round(self.img.width()/.91, 2)
+        self.truckW, self.truckH = self.img.width(), self.img.height()
+        self.meter = round(self.truckW/1.82, 2)
         self.ldwHolder = self.canvas2.create_text(self.hDim2/2,
-                                                  self.vDim*.95,
+                                                  self.vDim2*.45,
                                                   justify=tk.CENTER,
-                                                  text='', fill='white',
+                                                  text='LANE DEPARTURE',
+                                                  fill='red',
                                                   font=('Helvetica', '14',
                                                         'bold'))
         self.velSign = self.canvas2.create_oval((self.hDim2/2) - .1*self.hDim2,
@@ -154,7 +158,7 @@ class App(tk.Frame):
         self.velSignValue = self.canvas2.create_text(self.hDim2/2,
                                                      .16*self.vDim2,
                                                      fill='black',
-                                                     text='80',
+                                                     text='',
                                                      font=('Helvetica',
                                                            '36',
                                                            'bold'))
@@ -166,53 +170,55 @@ class App(tk.Frame):
                                                     font=('Helvetica',
                                                           '11',
                                                           'bold'))
-        self.leftArrow = self.canvas2.create_polygon([.1*self.hDim2,
-                                                     .2*self.vDim2],
-                                                     [.15*self.hDim2,
-                                                     .1*self.vDim2],
-                                                     [.15*self.hDim2,
-                                                     .15*self.vDim2],
-                                                     [.2*self.hDim2,
-                                                     .15*self.vDim2],
-                                                     [.2*self.hDim2,
-                                                     .25*self.vDim2],
-                                                     [.15*self.hDim2,
-                                                     .25*self.vDim2],
-                                                     [.15*self.hDim2,
-                                                     .3*self.vDim2],
-                                                     [.1*self.hDim2,
-                                                     .2*self.vDim2],
-                                                     fill='green',
-                                                     width=self.hDim2*.005)
-        self.rightArrow = self.canvas2.create_polygon([.9*self.hDim2,
-                                                      .2*self.vDim2],
-                                                      [.85*self.hDim2,
-                                                      .1*self.vDim2],
-                                                      [.85*self.hDim2,
-                                                      .15*self.vDim2],
-                                                      [.8*self.hDim2,
-                                                      .15*self.vDim2],
-                                                      [.8*self.hDim2,
-                                                      .25*self.vDim2],
-                                                      [.85*self.hDim2,
-                                                      .25*self.vDim2],
-                                                      [.85*self.hDim2,
-                                                      .3*self.vDim2],
-                                                      [.9*self.hDim2,
-                                                      .2*self.vDim2],
-                                                      fill='green',
-                                                      width=self.hDim2*.005)
+        self.turnSignalLeft = self.canvas2.create_polygon([.1*self.hDim2,
+                                                          .2*self.vDim2],
+                                                          [.15*self.hDim2,
+                                                          .1*self.vDim2],
+                                                          [.15*self.hDim2,
+                                                          .15*self.vDim2],
+                                                          [.2*self.hDim2,
+                                                          .15*self.vDim2],
+                                                          [.2*self.hDim2,
+                                                          .25*self.vDim2],
+                                                          [.15*self.hDim2,
+                                                          .25*self.vDim2],
+                                                          [.15*self.hDim2,
+                                                          .3*self.vDim2],
+                                                          [.1*self.hDim2,
+                                                          .2*self.vDim2],
+                                                          fill='SpringGreen2',
+                                                          width=self.hDim2 *
+                                                          .005)
+        self.turnSignalRight = self.canvas2.create_polygon([.9*self.hDim2,
+                                                           .2*self.vDim2],
+                                                           [.85*self.hDim2,
+                                                           .1*self.vDim2],
+                                                           [.85*self.hDim2,
+                                                           .15*self.vDim2],
+                                                           [.8*self.hDim2,
+                                                           .15*self.vDim2],
+                                                           [.8*self.hDim2,
+                                                           .25*self.vDim2],
+                                                           [.85*self.hDim2,
+                                                           .25*self.vDim2],
+                                                           [.85*self.hDim2,
+                                                           .3*self.vDim2],
+                                                           [.9*self.hDim2,
+                                                           .2*self.vDim2],
+                                                           fill='SpringGreen2',
+                                                           width=self.hDim2 *
+                                                           .005)
         self.lLanePos = [(self.hDim2/2)-self.meter,
                          self.vDim2,
-                         (self.hDim2/2)-(self.meter-.1*self.meter),
+                         (self.hDim2/2)-(self.meter+.2*self.meter),
                          self.vDim2,
-                         (self.hDim2/2)-(self.meter-.8*self.meter),
+                         (self.hDim2/2)-(self.meter-1.4*self.meter),
                          self.vDim2/2]
         self.rLanePos = [(self.hDim2/2)+self.meter,
                          self.vDim2,
-                         (self.hDim2/2)+(self.meter-.1*self.meter),
+                         (self.hDim2/2)+(self.meter+.2*self.meter),
                          self.vDim2,
-                         (self.hDim2/2)+(self.meter-.8*self.meter),
+                         (self.hDim2/2)+(self.meter-1.4*self.meter),
                          self.vDim2/2]
         self.rLane = self.canvas2.create_polygon(self.rLanePos,
                                                  fill='silver',
@@ -220,6 +226,37 @@ class App(tk.Frame):
         self.lLane = self.canvas2.create_polygon(self.lLanePos,
                                                  fill='silver',
                                                  width=self.hDim2*.02)
+        self.canvas2.create_polygon([1.18*self.hDim2,
+                                     self.vDim2,
+                                     1.16*self.hDim2,
+                                     self.vDim2,
+                                     .8*self.hDim2,
+                                     self.vDim2/2],
+                                    fill='white')
+        self.canvas2.create_polygon([-.18*self.hDim2,
+                                     self.vDim2,
+                                     -.16*self.hDim2,
+                                     self.vDim2,
+                                     .2*self.hDim2,
+                                     self.vDim2/2],
+                                    fill='white')
+        self.canvas3.create_polygon([.18*self.hDim2,
+                                     self.vDim2,
+                                     .16*self.hDim2,
+                                     self.vDim2,
+                                     -.2*self.hDim2,
+                                     self.vDim2/2],
+                                    fill='white')
+        self.canvas1.create_polygon([.59*self.hDim2,
+                                     self.vDim2,
+                                     .57*self.hDim2,
+                                     self.vDim2,
+                                     .951*self.hDim2,
+                                     self.vDim2/2],
+                                    fill='white')
+        self.canvas2.create_line([0, self.vDim2/2, self.hDim2,
+                                 self.vDim2/2], fill='white', width=1)
+        # self.canvas2.create_line(self.points, fill='white', width=2)
         self.truck = self.canvas2.create_image(self.truckPos,
                                                image=self.img)
         self.clock = self.canvas2.create_text(.25*self.hDim2,
@@ -239,8 +276,12 @@ class App(tk.Frame):
         self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.velSignValue, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.leftArrow, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.rightArrow, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.rLane, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.lLane, state=tk.HIDDEN)
+        # self.canvas2.itemconfigure(self.truck, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.turnSignalLeft, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.turnSignalRight, state=tk.HIDDEN)
+        self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
 
     def rotate(self, points, angle, center):
         angle = math.radians(angle)
@@ -264,12 +305,9 @@ class App(tk.Frame):
                                 self.pointsP1[0][1],
                                 self.pointsP1[1][0],
                                 self.pointsP1[1][1])
-            sleep(.00001)
             self.master.update()
             self.angle += 1.8
             round(self.angle, 1)
-            self.canvas1.itemconfigure(self.velHolder,
-                                       text=int(self.angle/1.8))
         elif op == 'dec' and self.angle >= 1.7:
             self.pointsP1 = self.rotate(self.pointsP1, -1.8,
                                         [(self.hDim/2), (self.vDim/2)])
@@ -277,7 +315,6 @@ class App(tk.Frame):
                                 self.pointsP1[0][1],
                                 self.pointsP1[1][0],
                                 self.pointsP1[1][1])
-            sleep(.00001)
             self.master.update()
             self.angle -= 1.8
             round(self.angle, 1)
@@ -286,82 +323,114 @@ class App(tk.Frame):
                     self.angle = 0
                 elif self.angle > 288:
                     self.angle = 288
-            self.canvas1.itemconfigure(self.velHolder,
-                                       text=int(self.angle/1.8))
 
-    def arrows(self, opt='verify'):
-        if opt == 'right':
-            pass
-        elif opt == 'left':
-            pass
-        if opt == 'verify':
-            if self.rArrowAux or self.lArrowAux:
-                self.arrowTimee = time()
-                if (self.arrowTimee - self.arrowTime) >= .5:
-                    if self.rArrowAux:
-                        self.rArrowAuxx = True
-                    elif self.lArrowAux:
-                        self.lArrowAuxx = True
-                    '''if not self.blinkauxx:
-                        self.bTimeee = time()
-                    self.warnings('verif', 'blink')'''
-                if self.rArrowAux and self.rArrowAuxx:
-                    # print('right arrow')
-                    state = self.canvas2.itemconfig(self.rightArrow,
-                                                    'state')[4]
-                    if state == 'hidden':
-                        self.canvas2.itemconfigure(self.rightArrow,
-                                                   state=tk.NORMAL)
-                        # print(state)
-                    elif state == 'normal':
-                        self.canvas2.itemconfigure(self.rightArrow,
-                                                   state=tk.HIDDEN)
-                        # print(state)
-                    self.arrowTime = self.arrowTimee
-                    self.rArrowAuxx = False
-                elif self.lArrowAux and self.lArrowAuxx:
-                    # print('left arrow')
-                    state = self.canvas2.itemconfig(self.leftArrow,
-                                                    'state')[4]
-                    if state == 'hidden':
-                        self.canvas2.itemconfigure(self.leftArrow,
-                                                   state=tk.NORMAL)
-                        # print(state)
-                    elif state == 'normal':
-                        self.canvas2.itemconfigure(self.leftArrow,
-                                                   state=tk.HIDDEN)
-                        # print(state)
-                    self.arrowTime = self.arrowTimee
-                    self.lArrowAuxx = False
+    def turnSigns(self):
+        if self.tsRightAux or self.tsLeftAux:
+            self.tsTimee = time()
+            if (self.tsTimee - self.tsTime) >= .5:
+                if self.tsRightAux:
+                    self.tsRightAuxx = True
+                elif self.tsLeftAux:
+                    self.tsLeftAuxx = True
+            if self.tsRightAux and self.tsRightAuxx:
+                state = self.canvas2.itemconfig(self.turnSignalRight,
+                                                'state')[4]
+                if state == 'hidden':
+                    self.canvas2.itemconfigure(self.turnSignalRight,
+                                               state=tk.NORMAL)
+                elif state == 'normal':
+                    self.canvas2.itemconfigure(self.turnSignalRight,
+                                               state=tk.HIDDEN)
+                self.tsTime = self.tsTimee
+                self.tsRightAuxx = False
+            elif self.tsLeftAux and self.tsLeftAuxx:
+                state = self.canvas2.itemconfig(self.turnSignalLeft,
+                                                'state')[4]
+                if state == 'hidden':
+                    self.canvas2.itemconfigure(self.turnSignalLeft,
+                                               state=tk.NORMAL)
+                elif state == 'normal':
+                    self.canvas2.itemconfigure(self.turnSignalLeft,
+                                               state=tk.HIDDEN)
+                self.tsTime = self.tsTimee
+                self.tsLeftAuxx = False
+
+    def updateInfo(self):
+        self.now = datetime.datetime.now()
+        self._time = ['{:02d}'.format(self.now.hour),
+                      '{:02d}'.format(self.now.minute)]
+        self.canvas2.itemconfig(app.clock,
+                                text=app._time[0] +
+                                ":"+app._time[1])
+        self.canvas1.itemconfigure(self.velHolder,
+                                   text=int(self.velValue))
+        while self.velValue > self.angle/1.8:
+            self.vAngle('inc')
+        while self.velValue < self.angle/1.8:
+            self.vAngle('dec')
 
     def moveLanes(self, right, left):
-        right, left = right * self.meter, left * self.meter
-        lLanePos = [.5*self.hDim2 + left,
-                    self.vDim2,
-                    .5*self.hDim2 + left + .1*self.meter,
-                    self.vDim2,
-                    .5*self.hDim2 + left + .8*self.meter,
-                    .5*self.vDim2]
-        rLanePos = [.5*self.hDim2 + right,
-                    self.vDim2,
-                    .5*self.hDim2 + right - .1*self.meter,
-                    self.vDim2,
-                    .5*self.hDim2 + right - .8*self.meter,
-                    .5*self.vDim2]
-        self.canvas2.coords(self.rLane,
-                            rLanePos[0],
-                            rLanePos[1],
-                            rLanePos[2],
-                            rLanePos[3],
-                            rLanePos[4],
-                            rLanePos[5])
-        self.canvas2.coords(self.lLane,
-                            lLanePos[0],
-                            lLanePos[1],
-                            lLanePos[2],
-                            lLanePos[3],
-                            lLanePos[4],
-                            lLanePos[5])
+        if left > 0 > right:
+            right, left = left, right
+        if left < 0 < right:
+            self.right, self.left = right, left
+            ampl = (abs(left)+right+(self.truckW/self.meter)) / 2
+            self.truckPos[0] = ((ampl - right)*self.meter) + \
+                               ((self.hDim2/2) - (self.truckW/2))
+            right, left = ampl * self.meter, -ampl * self.meter
+            self.lLanePos = [.5*self.hDim2 + left,
+                             self.vDim2,
+                             .5*self.hDim2 + left - .2*self.meter,
+                             self.vDim2,
+                             .5*self.hDim2 + left + 1.4*self.meter,
+                             .5*self.vDim2]
+            self.rLanePos = [.5*self.hDim2 + right,
+                             self.vDim2,
+                             .5*self.hDim2 + right + .2*self.meter,
+                             self.vDim2,
+                             .5*self.hDim2 + right - 1.4*self.meter,
+                             .5*self.vDim2]
+            self.canvas2.coords(self.rLane,
+                                self.rLanePos[0],
+                                self.rLanePos[1],
+                                self.rLanePos[2],
+                                self.rLanePos[3],
+                                self.rLanePos[4],
+                                self.rLanePos[5])
+            self.canvas2.coords(self.lLane,
+                                self.lLanePos[0],
+                                self.lLanePos[1],
+                                self.lLanePos[2],
+                                self.lLanePos[3],
+                                self.lLanePos[4],
+                                self.lLanePos[5])
+            self.canvas2.coords(self.truck, self.truckPos[0], self.truckPos[1])
+            self.canvas2.itemconfigure(self.rLane, state=tk.NORMAL)
+            self.canvas2.itemconfigure(self.lLane, state=tk.NORMAL)
+            # self.canvas2.itemconfigure(self.truck, state=tk.NORMAL)
+        else:
+            self.canvas2.itemconfigure(self.rLane, state=tk.HIDDEN)
+            self.canvas2.itemconfigure(self.lLane, state=tk.HIDDEN)
+            # self.canvas2.itemconfigure(self.truck, state=tk.HIDDEN)
+            self.truckPos[0] = self.hDim2/2
+            self.canvas2.coords(self.truck, self.truckPos[0], self.truckPos[1])
+
+    def ldw(self):
+        '''ldwR = self.rLanePos[0]
+        ldwL = self.lLanePos[0]
+        tRightEdge = self.truckPos[0] - .5*self.truck
+        tLeftEdge = self.truckPos[0] - .5*self.truckW'''
+        if self.right <= .05:
+            self.canvas2.itemconfig(self.rLane, fill='red')
+            self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
+        elif self.left >= -.05:
+            self.canvas2.itemconfig(self.lLane, fill='red')
+            self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
+        else:
+            self.canvas2.itemconfig(self.lLane, fill='silver')
+            self.canvas2.itemconfig(self.rLane, fill='silver')
+            self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
+        # print(ldwR, tRightEdge, ldwL, tLeftEdge)
 
 
 '''conection = (canrd.connect())
@@ -376,8 +445,10 @@ app = App(root)
 aux = True
 while aux:
     try:
-        right = float(input('right'))
-        left = float(input('left'))
+        app.velValue = random.uniform(80, 85)
+        right = random.uniform(1, 1.15)
+        left = random.uniform(-.06, -.03)
+        # right, left = float(input('right: ')), float(input('left: '))
         app.moveLanes(right, left)
         '''newPos = random.uniform(.9*app.truckPos[0], 1.1*app.truckPos[0])
         newRLPos = random.uniform(25, 50)
@@ -397,6 +468,7 @@ while aux:
                            app.lLanePos[4]-newRLPos,
                            app.lLanePos[5])'''
         if keyboard.is_pressed('d'):
+            pass
             '''app.truckPos[0] = .73*app.hDim2
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
             app.canvas2.itemconfig(app.rLane, fill='red')
@@ -405,35 +477,17 @@ while aux:
                                    text='Lane departure - right side')
             app.canvas2.itemconfig(app.ldwHolder,
                                    state=tk.NORMAL)'''
-            '''if not app.rArrowAux:
+            if not app.tsRightAux:
                 # print('right')
-                if app.lArrowAux:
-                    app.lArrowAuxx = False
-                    app.lArrowAux = False
-                    app.canvas2.itemconfigure(app.leftArrow, state=tk.HIDDEN)
-                app.rArrowAux = True
-                app.arrowTime = time()'''
-            app.rLanePos[0] += 25
-            app.rLanePos[2] += 25
-            app.rLanePos[4] += 25
-            app.lLanePos[0] -= 25
-            app.lLanePos[2] -= 25
-            app.lLanePos[4] -= 25
-            app.canvas2.coords(app.rLane,
-                               app.rLanePos[0],
-                               app.rLanePos[1],
-                               app.rLanePos[2],
-                               app.rLanePos[3],
-                               app.rLanePos[4],
-                               app.rLanePos[5])
-            app.canvas2.coords(app.lLane,
-                               app.lLanePos[0],
-                               app.lLanePos[1],
-                               app.lLanePos[2],
-                               app.lLanePos[3],
-                               app.lLanePos[4],
-                               app.lLanePos[5])
+                if app.tsLeftAux:
+                    app.tsLeftAuxx = False
+                    app.tsLeftAux = False
+                    app.canvas2.itemconfigure(app.turnSignalLeft,
+                                              state=tk.HIDDEN)
+                app.tsRightAux = True
+                app.tsTime = time()
         elif keyboard.is_pressed('a'):
+            pass
             '''app.truckPos[0] = .27*app.hDim2
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
             app.canvas2.itemconfig(app.lLane, fill='red')
@@ -442,71 +496,35 @@ while aux:
                                    text='Lane departure - left side')
             app.canvas2.itemconfig(app.ldwHolder,
                                    state=tk.NORMAL)'''
-            '''if not app.lArrowAux:
+            if not app.tsLeftAux:
                 # print('left')
-                if app.rArrowAux:
-                    app.rArrowAuxx = False
-                    app.rArrowAux = False
-                    app.canvas2.itemconfigure(app.rightArrow, state=tk.HIDDEN)
-                app.lArrowAux = True
-                app.arrowTime = time()'''
-            app.rLanePos[0] -= 25
-            app.rLanePos[2] -= 25
-            app.rLanePos[4] -= 25
-            app.lLanePos[0] += 25
-            app.lLanePos[2] += 25
-            app.lLanePos[4] += 25
-            app.canvas2.coords(app.rLane,
-                               app.rLanePos[0],
-                               app.rLanePos[1],
-                               app.rLanePos[2],
-                               app.rLanePos[3],
-                               app.rLanePos[4],
-                               app.rLanePos[5])
-            app.canvas2.coords(app.lLane,
-                               app.lLanePos[0],
-                               app.lLanePos[1],
-                               app.lLanePos[2],
-                               app.lLanePos[3],
-                               app.lLanePos[4],
-                               app.lLanePos[5])
+                if app.tsRightAux:
+                    app.tsRightAuxx = False
+                    app.tsRightAux = False
+                    app.canvas2.itemconfigure(app.turnSignalRight,
+                                              state=tk.HIDDEN)
+                app.tsLeftAux = True
+                app.tsTime = time()
         elif keyboard.is_pressed('s'):
+            pass
             '''app.truckPos[0] = .5*app.hDim2
             app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
             app.canvas2.itemconfig(app.lLane, fill='silver')
             app.canvas2.itemconfig(app.rLane, fill='silver')
             app.canvas2.itemconfig(app.ldwHolder,
                                    state=tk.HIDDEN)'''
-            '''if app.rArrowAux or app.lArrowAux:
+            if app.tsRightAux or app.tsLeftAux:
                 # print('disabled')
-                app.canvas2.itemconfigure(app.leftArrow, state=tk.HIDDEN)
-                app.canvas2.itemconfigure(app.rightArrow, state=tk.HIDDEN)
-                app.lArrowAux = False
-                app.lArrowAuxx = False
-                app.rArrowAux = False
-                app.rArrowAuxx = False'''
-            app.rLanePos[0] = (app.hDim2/2)+app.meter
-            app.rLanePos[2] = (app.hDim2/2)+.9*app.meter
-            app.rLanePos[4] = (app.hDim2/2)+.2*app.meter
-            app.lLanePos[0] = (app.hDim2/2)-app.meter
-            app.lLanePos[2] = (app.hDim2/2)-.9*app.meter
-            app.lLanePos[4] = (app.hDim2/2)-.2*app.meter
-            app.canvas2.coords(app.rLane,
-                               app.rLanePos[0],
-                               app.rLanePos[1],
-                               app.rLanePos[2],
-                               app.rLanePos[3],
-                               app.rLanePos[4],
-                               app.rLanePos[5])
-            app.canvas2.coords(app.lLane,
-                               app.lLanePos[0],
-                               app.lLanePos[1],
-                               app.lLanePos[2],
-                               app.lLanePos[3],
-                               app.lLanePos[4],
-                               app.lLanePos[5])
-        # app.arrows('verify')
-        sleep(.1)
+                app.canvas2.itemconfigure(app.turnSignalLeft, state=tk.HIDDEN)
+                app.canvas2.itemconfigure(app.turnSignalRight, state=tk.HIDDEN)
+                app.tsLeftAux = False
+                app.tsLeftAuxx = False
+                app.tsRightAux = False
+                app.tsRightAuxx = False
+        app.turnSigns()
+        app.updateInfo()
+        app.ldw()
+        sleep(.15)
         root.update()
     except Exception as e:  # noqa: F841
         print(e)
