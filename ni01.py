@@ -1,11 +1,12 @@
 import tkinter as tk
 import math
 import keyboard
-from time import sleep, time
+from time import sleep, time  # noqa: F401
 from PIL import ImageTk, Image
 import random  # noqa: F401
 import datetime
-# import canReadCamera as canrd  # noqa: F401
+import canReadCamera as canrd  # noqa: F401
+from threading import Thread
 
 
 class App(tk.Frame):
@@ -13,15 +14,20 @@ class App(tk.Frame):
         self.now = datetime.datetime.now()
         self._time = ['{:02d}'.format(self.now.hour),
                       '{:02d}'.format(self.now.minute)]
-        self.extTemp = 25
+        self.extTemp = ''
         self.tsRightAux = False
-        self.tsRightAuxx = False
         self.tsLeftAux = False
-        self.tsLeftAuxx = False
-        self.tsTime = time()
-        self.tsTimee = time()
-        self.right = .91
-        self.left = .91
+        self.rldwAux = False
+        self.lldwAux = False
+        self.rldwAuxx = False
+        self.lldwAuxx = False
+        self.lanesAux = False
+        self.lanesAuxx = False
+        self.tsTime = 0
+        self.ldwTime = 0
+        self.lanesTime = 0
+        self.right = 1
+        self.left = 1
         tk.Frame.__init__(self, master)
         master.winfo_toplevel().title("Python Interfaces")
         self.mainFrame = tk.Frame(master, background='black')
@@ -155,6 +161,7 @@ class App(tk.Frame):
                                                 .1*self.hDim2,
                                                 fill='white', outline='red',
                                                 width=self.hDim2*.02)
+        self.speedLim = 0
         self.velSignValue = self.canvas2.create_text(self.hDim2/2,
                                                      .16*self.vDim2,
                                                      fill='black',
@@ -256,7 +263,6 @@ class App(tk.Frame):
                                     fill='white')
         self.canvas2.create_line([0, self.vDim2/2, self.hDim2,
                                  self.vDim2/2], fill='white', width=1)
-        # self.canvas2.create_line(self.points, fill='white', width=2)
         self.truck = self.canvas2.create_image(self.truckPos,
                                                image=self.img)
         self.clock = self.canvas2.create_text(.25*self.hDim2,
@@ -269,8 +275,7 @@ class App(tk.Frame):
         self.extTempHolder = self.canvas2.create_text(.75*self.hDim2,
                                                       .05*self.vDim2,
                                                       fill='white',
-                                                      text=str(self.extTemp) +
-                                                           ' ºC',
+                                                      text='',
                                                       font=('Helvetica',
                                                             '18'))
         self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
@@ -278,7 +283,6 @@ class App(tk.Frame):
         self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.rLane, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.lLane, state=tk.HIDDEN)
-        # self.canvas2.itemconfigure(self.truck, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.turnSignalLeft, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.turnSignalRight, state=tk.HIDDEN)
         self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
@@ -326,34 +330,27 @@ class App(tk.Frame):
 
     def turnSigns(self):
         if self.tsRightAux or self.tsLeftAux:
-            self.tsTimee = time()
-            if (self.tsTimee - self.tsTime) >= .5:
+            if (time() - self.tsTime) >= .5:
                 if self.tsRightAux:
-                    self.tsRightAuxx = True
+                    state = self.canvas2.itemconfig(self.turnSignalRight,
+                                                    'state')[4]
+                    if state == 'hidden':
+                        self.canvas2.itemconfigure(self.turnSignalRight,
+                                                   state=tk.NORMAL)
+                    elif state == 'normal':
+                        self.canvas2.itemconfigure(self.turnSignalRight,
+                                                   state=tk.HIDDEN)
+                    self.tsTime = time()
                 elif self.tsLeftAux:
-                    self.tsLeftAuxx = True
-            if self.tsRightAux and self.tsRightAuxx:
-                state = self.canvas2.itemconfig(self.turnSignalRight,
-                                                'state')[4]
-                if state == 'hidden':
-                    self.canvas2.itemconfigure(self.turnSignalRight,
-                                               state=tk.NORMAL)
-                elif state == 'normal':
-                    self.canvas2.itemconfigure(self.turnSignalRight,
-                                               state=tk.HIDDEN)
-                self.tsTime = self.tsTimee
-                self.tsRightAuxx = False
-            elif self.tsLeftAux and self.tsLeftAuxx:
-                state = self.canvas2.itemconfig(self.turnSignalLeft,
-                                                'state')[4]
-                if state == 'hidden':
-                    self.canvas2.itemconfigure(self.turnSignalLeft,
-                                               state=tk.NORMAL)
-                elif state == 'normal':
-                    self.canvas2.itemconfigure(self.turnSignalLeft,
-                                               state=tk.HIDDEN)
-                self.tsTime = self.tsTimee
-                self.tsLeftAuxx = False
+                    state = self.canvas2.itemconfig(self.turnSignalLeft,
+                                                    'state')[4]
+                    if state == 'hidden':
+                        self.canvas2.itemconfigure(self.turnSignalLeft,
+                                                   state=tk.NORMAL)
+                    elif state == 'normal':
+                        self.canvas2.itemconfigure(self.turnSignalLeft,
+                                                   state=tk.HIDDEN)
+                    self.tsTime = time()
 
     def updateInfo(self):
         self.now = datetime.datetime.now()
@@ -364,168 +361,178 @@ class App(tk.Frame):
                                 ":"+app._time[1])
         self.canvas1.itemconfigure(self.velHolder,
                                    text=int(self.velValue))
+        if self.extTemp > 0:
+            self.canvas2.itemconfigure(self.extTempHolder,
+                                       text=str(self.extTemp) + ' ºC')
+        else:
+            self.canvas2.itemconfigure(self.extTempHolder,
+                                       text='')
+        if self.speedLim > 0:
+            self.canvas2.itemconfigure(self.velSignValue,
+                                       text=self.speedLim)
+            self.canvas2.itemconfigure(self.velSign, state=tk.NORMAL)
+            self.canvas2.itemconfigure(self.velSignValue, state=tk.NORMAL)
+            self.canvas2.itemconfigure(self.velSignUnit, state=tk.NORMAL)
+        else:
+            self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
+            self.canvas2.itemconfigure(self.velSignValue, state=tk.HIDDEN)
+            self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
         while self.velValue > self.angle/1.8:
             self.vAngle('inc')
         while self.velValue < self.angle/1.8:
             self.vAngle('dec')
 
-    def moveLanes(self, right, left):
-        if left > 0 > right:
-            right, left = left, right
-        if left < 0 < right:
-            self.right, self.left = right, left
-            ampl = (abs(left)+right+(self.truckW/self.meter)) / 2
-            self.truckPos[0] = ((ampl - right)*self.meter) + \
-                               ((self.hDim2/2) - (self.truckW/2))
-            right, left = ampl * self.meter, -ampl * self.meter
-            self.lLanePos = [.5*self.hDim2 + left,
-                             self.vDim2,
-                             .5*self.hDim2 + left - .2*self.meter,
-                             self.vDim2,
-                             .5*self.hDim2 + left + 1.4*self.meter,
-                             .5*self.vDim2]
-            self.rLanePos = [.5*self.hDim2 + right,
-                             self.vDim2,
-                             .5*self.hDim2 + right + .2*self.meter,
-                             self.vDim2,
-                             .5*self.hDim2 + right - 1.4*self.meter,
-                             .5*self.vDim2]
-            self.canvas2.coords(self.rLane,
-                                self.rLanePos[0],
-                                self.rLanePos[1],
-                                self.rLanePos[2],
-                                self.rLanePos[3],
-                                self.rLanePos[4],
-                                self.rLanePos[5])
-            self.canvas2.coords(self.lLane,
-                                self.lLanePos[0],
-                                self.lLanePos[1],
-                                self.lLanePos[2],
-                                self.lLanePos[3],
-                                self.lLanePos[4],
-                                self.lLanePos[5])
-            self.canvas2.coords(self.truck, self.truckPos[0], self.truckPos[1])
-            self.canvas2.itemconfigure(self.rLane, state=tk.NORMAL)
-            self.canvas2.itemconfigure(self.lLane, state=tk.NORMAL)
-            # self.canvas2.itemconfigure(self.truck, state=tk.NORMAL)
+    def moveLanes(self):
+        if self.left > 0 > self.right:
+            self.right, self.left = self.left, self.right
+        if self.left <= 0 <= self.right and self.right < 2 and self.left > -2:
+            if not self.lanesAux:
+                self.lanesTime = time()
+                self.lanesAux = True
+                self.lanesAuxx = False
+            elif time() - self.lanesTime >= .5:
+                ampl = (abs(self.left)+self.right+(self.truckW/self.meter)) / 2
+                self.truckPos[0] = ((ampl - self.right)*self.meter) + \
+                                   ((self.hDim2/2) - (self.truckW/2))
+                right, left = ampl * self.meter, -ampl * self.meter
+                self.lLanePos = [.5*self.hDim2 + left,
+                                 self.vDim2,
+                                 .5*self.hDim2 + left - .2*self.meter,
+                                 self.vDim2,
+                                 .5*self.hDim2 + left + 1.4*self.meter,
+                                 .5*self.vDim2]
+                self.rLanePos = [.5*self.hDim2 + right,
+                                 self.vDim2,
+                                 .5*self.hDim2 + right + .2*self.meter,
+                                 self.vDim2,
+                                 .5*self.hDim2 + right - 1.4*self.meter,
+                                 .5*self.vDim2]
+                self.canvas2.coords(self.rLane,
+                                    self.rLanePos[0],
+                                    self.rLanePos[1],
+                                    self.rLanePos[2],
+                                    self.rLanePos[3],
+                                    self.rLanePos[4],
+                                    self.rLanePos[5])
+                self.canvas2.coords(self.lLane,
+                                    self.lLanePos[0],
+                                    self.lLanePos[1],
+                                    self.lLanePos[2],
+                                    self.lLanePos[3],
+                                    self.lLanePos[4],
+                                    self.lLanePos[5])
+                self.canvas2.coords(self.truck, self.truckPos[0],
+                                    self.truckPos[1])
+                self.canvas2.itemconfigure(self.rLane, state=tk.NORMAL)
+                self.canvas2.itemconfigure(self.lLane, state=tk.NORMAL)
         else:
-            self.canvas2.itemconfigure(self.rLane, state=tk.HIDDEN)
-            self.canvas2.itemconfigure(self.lLane, state=tk.HIDDEN)
-            # self.canvas2.itemconfigure(self.truck, state=tk.HIDDEN)
-            self.truckPos[0] = self.hDim2/2
-            self.canvas2.coords(self.truck, self.truckPos[0], self.truckPos[1])
+            if not self.lanesAuxx:
+                self.lanesTime = time()
+                self.lanesAuxx = True
+                self.lanesAux = False
+            elif time() - self.lanesTime >= .5:
+                self.canvas2.itemconfigure(self.rLane, state=tk.HIDDEN)
+                self.canvas2.itemconfigure(self.lLane, state=tk.HIDDEN)
+                self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
+                self.truckPos[0] = self.hDim2/2
+                self.canvas2.coords(self.truck, self.truckPos[0],
+                                    self.truckPos[1])
 
     def ldw(self):
-        '''ldwR = self.rLanePos[0]
-        ldwL = self.lLanePos[0]
-        tRightEdge = self.truckPos[0] - .5*self.truck
-        tLeftEdge = self.truckPos[0] - .5*self.truckW'''
-        if self.right <= .05:
-            self.canvas2.itemconfig(self.rLane, fill='red')
-            self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
-        elif self.left >= -.05:
-            self.canvas2.itemconfig(self.lLane, fill='red')
-            self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
+        if self.right <= .05 and not self.tsLeftAux and not self.tsRightAux:
+            if not self.rldwAux:
+                self.rldwAux = True
+                self.rldwAuxx = False
+                self.ldwTime = time()
+            elif time() - self.ldwTime >= .5 and self.lanesAux:
+                self.canvas2.itemconfig(self.rLane, fill='red')
+                self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
         else:
-            self.canvas2.itemconfig(self.lLane, fill='silver')
-            self.canvas2.itemconfig(self.rLane, fill='silver')
-            self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
-        # print(ldwR, tRightEdge, ldwL, tLeftEdge)
+            if not self.rldwAuxx:
+                self.rldwAuxx = True
+                self.ldwTime = time()
+            elif time() - self.ldwTime >= .5:
+                self.rldwAux = False
+                self.canvas2.itemconfig(self.rLane, fill='silver')
+                if not self.lldwAux:
+                    self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
+        if self.left >= -.05 and not self.tsLeftAux and not self.tsRightAux:
+            if not self.lldwAux:
+                self.lldwAux = True
+                self.lldwAuxx = False
+                self.ldwTime = time()
+            elif time() - self.ldwTime >= .5 and self.lanesAux:
+                self.canvas2.itemconfig(self.lLane, fill='red')
+                self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
+        else:
+            if not self.lldwAuxx:
+                self.lldwAuxx = True
+                self.ldwTime = time()
+            elif time() - self.ldwTime >= .5:
+                self.lldwAux = False
+                self.canvas2.itemconfig(self.lLane, fill='silver')
+                if not self.rldwAux:
+                    self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
 
 
-'''conection = (canrd.connect())
-while not conection[0]:
-    print('Trying to connect...')
-    conection = (canrd.connect())
-    sleep(1)
-print(conection[1])
-conection = conection[0]'''
 root = tk.Tk()
 app = App(root)
+
+camera = canrd.camera()
+camera.time1 = time()
+while not camera.connection:
+    camera.connect()
+    if time() - camera.time1 > 1:
+        print('.')
+        camera.time1 = time()
+Thread(target=camera.keepReading, daemon=True).start()
 aux = True
 while aux:
     try:
-        app.velValue = random.uniform(80, 85)
-        right = random.uniform(1, 1.15)
-        left = random.uniform(-.06, -.03)
-        # right, left = float(input('right: ')), float(input('left: '))
-        app.moveLanes(right, left)
-        '''newPos = random.uniform(.9*app.truckPos[0], 1.1*app.truckPos[0])
-        newRLPos = random.uniform(25, 50)
-        app.canvas2.coords(app.truck, newPos, app.truckPos[1])
-        app.canvas2.coords(app.rLane,
-                           app.rLanePos[0]+newRLPos,
-                           app.rLanePos[1],
-                           app.rLanePos[2]+newRLPos,
-                           app.rLanePos[3],
-                           app.rLanePos[4]+newRLPos,
-                           app.rLanePos[5])
-        app.canvas2.coords(app.lLane,
-                           app.lLanePos[0]-newRLPos,
-                           app.lLanePos[1],
-                           app.lLanePos[2]-newRLPos,
-                           app.lLanePos[3],
-                           app.lLanePos[4]-newRLPos,
-                           app.lLanePos[5])'''
+        '''app.velValue = random.uniform(80, 85)
+        app.right = random.uniform(0, 0)
+        app.left = random.uniform(-0, -0)'''
         if keyboard.is_pressed('d'):
-            pass
-            '''app.truckPos[0] = .73*app.hDim2
-            app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            app.canvas2.itemconfig(app.rLane, fill='red')
-            app.canvas2.itemconfig(app.lLane, fill='silver')
-            app.canvas2.itemconfig(app.ldwHolder,
-                                   text='Lane departure - right side')
-            app.canvas2.itemconfig(app.ldwHolder,
-                                   state=tk.NORMAL)'''
             if not app.tsRightAux:
-                # print('right')
                 if app.tsLeftAux:
-                    app.tsLeftAuxx = False
                     app.tsLeftAux = False
                     app.canvas2.itemconfigure(app.turnSignalLeft,
                                               state=tk.HIDDEN)
                 app.tsRightAux = True
                 app.tsTime = time()
         elif keyboard.is_pressed('a'):
-            pass
-            '''app.truckPos[0] = .27*app.hDim2
-            app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            app.canvas2.itemconfig(app.lLane, fill='red')
-            app.canvas2.itemconfig(app.rLane, fill='silver')
-            app.canvas2.itemconfig(app.ldwHolder,
-                                   text='Lane departure - left side')
-            app.canvas2.itemconfig(app.ldwHolder,
-                                   state=tk.NORMAL)'''
             if not app.tsLeftAux:
-                # print('left')
                 if app.tsRightAux:
-                    app.tsRightAuxx = False
                     app.tsRightAux = False
                     app.canvas2.itemconfigure(app.turnSignalRight,
                                               state=tk.HIDDEN)
                 app.tsLeftAux = True
                 app.tsTime = time()
         elif keyboard.is_pressed('s'):
-            pass
-            '''app.truckPos[0] = .5*app.hDim2
-            app.canvas2.coords(app.truck, app.truckPos[0], app.truckPos[1])
-            app.canvas2.itemconfig(app.lLane, fill='silver')
-            app.canvas2.itemconfig(app.rLane, fill='silver')
-            app.canvas2.itemconfig(app.ldwHolder,
-                                   state=tk.HIDDEN)'''
             if app.tsRightAux or app.tsLeftAux:
-                # print('disabled')
                 app.canvas2.itemconfigure(app.turnSignalLeft, state=tk.HIDDEN)
                 app.canvas2.itemconfigure(app.turnSignalRight, state=tk.HIDDEN)
                 app.tsLeftAux = False
-                app.tsLeftAuxx = False
                 app.tsRightAux = False
-                app.tsRightAuxx = False
+        if camera.connection:
+            app.velValue = round(camera.vehSpeed, 2)
+            app.extTemp = round(camera.temp, 1)
+            app.speedLim = camera.speedLim
+            app.left = round(camera.lLane, 2)
+            app.right = round(camera.rLane, 2)
+        else:
+            app.velValue = 0
+            app.extTemp = ''
+            app.speedLim = 0
+            app.left = 9
+            app.right = 9
+        app.moveLanes()
         app.turnSigns()
         app.updateInfo()
         app.ldw()
-        sleep(.15)
+        sleep(.1)
         root.update()
     except Exception as e:  # noqa: F841
         print(e)
         aux = False
+        camera.release()
