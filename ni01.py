@@ -11,9 +11,9 @@ from threading import Thread  # noqa: F401
 
 class App(tk.Frame):
     def __init__(self, master):
-        self.now = datetime.datetime.now()
-        self._hour = '{:02d}'.format(self.now.hour)
-        self._minute = '{:02d}'.format(self.now.minute)
+        now = datetime.datetime.now()
+        self._hour = '{:02d}'.format(now.hour)
+        self._minute = '{:02d}'.format(now.minute)
         self.extTemp = 0
         self.extTempOld = 1
         self.tsRightAux = False
@@ -27,8 +27,9 @@ class App(tk.Frame):
         self.tsTime = 0
         self.ldwTime = 0
         self.lanesTime = 0
-        self.right = 1
-        self.left = 1
+        self.right = 9
+        self.left = 9
+        # canvas overview
         tk.Frame.__init__(self, master)
         master.winfo_toplevel().title("Python Interfaces")
         self.mainFrame = tk.Frame(master, background='black')
@@ -153,7 +154,8 @@ class App(tk.Frame):
                                                   text='LANE DEPARTURE',
                                                   fill='red',
                                                   font=('Helvetica', '14',
-                                                        'bold'))
+                                                        'bold'),
+                                                  state=tk.HIDDEN)
         self.velSign = self.canvas2.create_oval((self.hDim2/2) - .1*self.hDim2,
                                                 (.16*self.vDim2) -
                                                 .1*self.hDim2,
@@ -161,7 +163,8 @@ class App(tk.Frame):
                                                 (.16*self.vDim) +
                                                 .1*self.hDim2,
                                                 fill='white', outline='red',
-                                                width=self.hDim2*.02)
+                                                width=self.hDim2*.02,
+                                                state=tk.HIDDEN)
         self.speedLim = 0
         self.velSignValue = self.canvas2.create_text(self.hDim2/2,
                                                      .16*self.vDim2,
@@ -169,7 +172,8 @@ class App(tk.Frame):
                                                      text='',
                                                      font=('Helvetica',
                                                            '36',
-                                                           'bold'))
+                                                           'bold'),
+                                                     state=tk.HIDDEN)
         self.velSignUnit = self.canvas2.create_text(self.hDim2/2,
                                                     .16*self.vDim2 +
                                                     .06*self.hDim2,
@@ -177,7 +181,8 @@ class App(tk.Frame):
                                                     text='km/h',
                                                     font=('Helvetica',
                                                           '11',
-                                                          'bold'))
+                                                          'bold'),
+                                                    state=tk.HIDDEN)
         self.turnSignalLeft = self.canvas2.create_polygon([.1*self.hDim2,
                                                           .2*self.vDim2],
                                                           [.15*self.hDim2,
@@ -196,7 +201,8 @@ class App(tk.Frame):
                                                           .2*self.vDim2],
                                                           fill='SpringGreen2',
                                                           width=self.hDim2 *
-                                                          .005)
+                                                          .005,
+                                                          state=tk.HIDDEN)
         self.turnSignalRight = self.canvas2.create_polygon([.9*self.hDim2,
                                                            .2*self.vDim2],
                                                            [.85*self.hDim2,
@@ -215,7 +221,8 @@ class App(tk.Frame):
                                                            .2*self.vDim2],
                                                            fill='SpringGreen2',
                                                            width=self.hDim2 *
-                                                           .005)
+                                                           .005,
+                                                           state=tk.HIDDEN)
         self.lLanePos = [(self.hDim2/2)-self.meter,
                          self.vDim2,
                          (self.hDim2/2)-(self.meter+.2*self.meter),
@@ -230,10 +237,12 @@ class App(tk.Frame):
                          self.vDim2/2]
         self.rLane = self.canvas2.create_polygon(self.rLanePos,
                                                  fill='silver',
-                                                 width=self.hDim2*.02)
+                                                 width=self.hDim2*.02,
+                                                 state=tk.HIDDEN)
         self.lLane = self.canvas2.create_polygon(self.lLanePos,
                                                  fill='silver',
-                                                 width=self.hDim2*.02)
+                                                 width=self.hDim2*.02,
+                                                 state=tk.HIDDEN)
         self.canvas2.create_polygon([1.18*self.hDim2,
                                      self.vDim2,
                                      1.16*self.hDim2,
@@ -279,14 +288,7 @@ class App(tk.Frame):
                                                       text='',
                                                       font=('Helvetica',
                                                             '18'))
-        self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.velSignValue, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.rLane, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.lLane, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.turnSignalLeft, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.turnSignalRight, state=tk.HIDDEN)
-        self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
+        # self.canvas2.itemconfigure(self.truck, state=tk.HIDDEN)
 
     def rotate(self, points, angle, center):
         angle = math.radians(angle)
@@ -393,14 +395,14 @@ class App(tk.Frame):
     def moveLanes(self):
         if self.left > 0 > self.right:
             self.right, self.left = self.left, self.right
+        ampl = (abs(self.left)+self.right) / 2
         if self.left <= 0 <= self.right and \
-           self.right < 2.9 and self.left > -2.9:
+           .7 <= ampl <= 2.5:
             if not self.lanesAux:
                 self.lanesTime = time()
                 self.lanesAux = True
                 self.lanesAuxx = False
             elif time() - self.lanesTime >= .5:
-                ampl = (abs(self.left)+self.right) / 2
                 self.truckPos[0] = ((ampl - self.right)*self.meter) + \
                                    (self.hDim2/2)
                 right, left = ampl * self.meter, -ampl * self.meter
@@ -408,13 +410,13 @@ class App(tk.Frame):
                                  self.vDim2,
                                  .5*self.hDim2 + left - .2*self.meter,
                                  self.vDim2,
-                                 .5*self.hDim2 + left + 1.4*self.meter,
+                                 .5*self.hDim2 + left + .7*self.meter,
                                  .5*self.vDim2]
                 self.rLanePos = [.5*self.hDim2 + right,
                                  self.vDim2,
                                  .5*self.hDim2 + right + .2*self.meter,
                                  self.vDim2,
-                                 .5*self.hDim2 + right - 1.4*self.meter,
+                                 .5*self.hDim2 + right - .7*self.meter,
                                  .5*self.vDim2]
                 self.canvas2.coords(self.rLane,
                                     self.rLanePos[0],
@@ -448,7 +450,7 @@ class App(tk.Frame):
                                     self.truckPos[1])
 
     def ldw(self):
-        if self.right <= .95 and not self.tsLeftAux and not self.tsRightAux:
+        if self.right <= 1 and not self.tsLeftAux and not self.tsRightAux:
             if not self.rldwAux:
                 self.rldwAux = True
                 self.rldwAuxx = False
@@ -465,7 +467,7 @@ class App(tk.Frame):
                 self.canvas2.itemconfig(self.rLane, fill='silver')
                 if not self.lldwAux:
                     self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
-        if self.left >= -.95 and not self.tsLeftAux and not self.tsRightAux:
+        if self.left >= -1 and not self.tsLeftAux and not self.tsRightAux:
             if not self.lldwAux:
                 self.lldwAux = True
                 self.lldwAuxx = False
@@ -487,22 +489,25 @@ class App(tk.Frame):
 root = tk.Tk()
 app = App(root)
 
-camera = canrd.camera()
+'''camera = canrd.camera()
+
 time1 = time()
 while not camera.connection:
     camera.connect()
     if time() - time1 > 1:
         print('.')
         time1 = time()
-Thread(target=camera.reading, daemon=True).start()
+
+Thread(target=camera.reading, daemon=True).start()'''
+
 aux = True
 while aux:
     try:
         '''app.velValue = random.uniform(80, 85)
-        app.right = random.uniform(2.8, 3)
-        app.left = random.uniform(-2.8, -3)
+        app.right = random.uniform(2.8, 2.7)
+        app.left = random.uniform(-2.8, -2.7)'''
         app.right = float(input('right: '))
-        app.left = float(input('left: '))'''
+        app.left = float(input('left: '))
         '''if keyboard.is_pressed('d'):
             if not app.tsRightAux:
                 if app.tsLeftAux:
@@ -525,18 +530,11 @@ while aux:
                 app.canvas2.itemconfigure(app.turnSignalRight, state=tk.HIDDEN)
                 app.tsLeftAux = False
                 app.tsRightAux = False'''
-        if camera.msgPresent:
-            app.velValue = round(camera.vehSpeed, 2)
-            app.extTemp = round(camera.temp, 1)
-            app.speedLim = camera.speedLim
-            app.left = round(camera.lLane, 2)
-            app.right = round(camera.rLane, 2)
-        else:
-            app.velValue = 0
-            app.extTemp = 0
-            app.speedLim = 0
-            app.left = 9
-            app.right = 9
+        '''app.velValue = camera.vehSpeed
+        app.extTemp = camera.temp
+        app.left = camera.lLane
+        app.right = camera.rLane
+        app.speedLim = camera.speedLim'''
         app.moveLanes()
         app.turnSigns()
         app.updateInfo()
@@ -546,4 +544,4 @@ while aux:
     except Exception as e:  # noqa: F841
         print(e)
         aux = False
-        camera.release()
+        # camera.release()

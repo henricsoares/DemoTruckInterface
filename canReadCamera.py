@@ -7,25 +7,20 @@ from time import sleep, time  # noqa: F401
 
 class camera():
     def __init__(self):
-        self.objPCAN = pcb.PCANBasic()
-        self.ids = [218000407,  # TCO1_ICUC
+        self.objPCAN = pcb.PCANBasic()  # can object
+        self.ids = [  # messages ids
+                    218000407,  # TCO1_ICUC
                     285147519,  # MPC_C03
                     285147775,  # MPC_C04
                     419362081,  # AMB_SCA
                     419425151]  # MPC_MESS12
-        self.db = cantools.database.load_file('truck.dbc')
-        self.temp, self.vehSpeed, self.speedLim = 0, 0, 0
-        self.rLane, self.lLane = 9, 9
-        self.emCount = 0
-        self.time1, self.time2 = 0, 0
-        self.conf = False
-        self.vspeedAux = False
-        self.speedlAux = False
-        self.lanesAux = False
-        self.confAux = False
-        self.tempAux = False
-        self.connection = False
-        self.msgPresent = False
+        self.db = cantools.database.load_file('truck.dbc')  # can db
+        self.emCount = 0  # empty message counter
+        self.connection = False  # connection indicator
+        self.msgPresent = False  # valid message indicator
+        self.rLane, self.lLane = 9, 9  # lanes distance values
+        self.conf = False  # confidence of lane signal
+        self.temp, self.vehSpeed, self.speedLim = 0, 0, 0  # other values
 
     def connect(self):
         result = self.objPCAN.Initialize(pcb.PCAN_USBBUS1, pcb.PCAN_BAUD_666K)
@@ -49,7 +44,7 @@ class camera():
             print(result[1].decode())
         else:
             self.connection = False
-            print("PCAN-USB (Ch-1) was released")
+            print(result[1].decode())
 
     def reading(self):
         while self.connection:
@@ -58,19 +53,15 @@ class camera():
                 if msg[0] == 0:
                     msg = msg[1]
                     if msg.ID in self.ids:
-                        self.handleMsg(msg)
                         Thread(target=self.handleMsg, args=(msg,),
                                daemon=True).start()
                         self.emCount = 0
-                        self.msgPresent = True
                 elif msg[0] == 67108864:
                     print('No flow')
-                    self.msgPresent = False
                 elif msg[0] == 32:
                     self.emCount += 1
                     if self.emCount > 999999:
                         print('Empty message')
-                        self.msgPresent = False
             except Exception as e:
                 print(e)
         print('no connection')
@@ -81,6 +72,8 @@ class camera():
             self.vehSpeed = msg['VehSpd_Cval_ICUC']
             if self.vehSpeed == 'SNA':
                 self.vehSpeed = 0
+            else:
+                self.vehSpeed = round(self.vehSpeed, 2)
         elif msg.ID == self.ids[1]:  # lanes distance
             msg = self.db.decode_message(msg.ID, msg.DATA)
             self.lLane = msg['DistLaneLineLt_Cval_MPC']
@@ -90,8 +83,8 @@ class camera():
                 self.lLane = 9
                 self.rLane = 9
             else:
-                self.lLane, self.rLane = -self.lLane, \
-                                            -self.rLane
+                self.lLane, self.rLane = round(-self.lLane, 2), \
+                                            round(-self.rLane, 2)
         elif msg.ID == self.ids[2]:  # confidence lane value
             msg = self.db.decode_message(msg.ID, msg.DATA)
             cR = msg['ConfLaneRt_Cval_MPC']
@@ -105,11 +98,13 @@ class camera():
             self.temp = msg['AirTempOutsd_Cval_SCA']
             if self.temp == 'SNA':
                 self.temp = 0
+            else:
+                self.temp = round(self.temp, 1)
         elif msg.ID == self.ids[4]:  # speed limit detected
             msg = self.db.decode_message(msg.ID, msg.DATA)
             self.speedLim = msg['RSF_SpeedLimit1Detected']
             if self.speedLim == 'SNA':
-                self.temp = 0
+                self.speedLim = 0
 
 
 '''ap = camera()
