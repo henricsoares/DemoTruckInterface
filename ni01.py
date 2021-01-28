@@ -1,12 +1,12 @@
 import tkinter as tk
 import math
 import keyboard  # noqa: F401
-from time import sleep, time  # noqa: F401
+from time import sleep, time
 from PIL import ImageTk, Image
 import random  # noqa: F401
 import datetime
-import canReadCamera as canrd  # noqa: F401
-from threading import Thread  # noqa: F401
+import canReadCamera as canrd
+from threading import Thread
 
 
 class App(tk.Frame):
@@ -14,8 +14,6 @@ class App(tk.Frame):
         now = datetime.datetime.now()
         self._hour = '{:02d}'.format(now.hour)
         self._minute = '{:02d}'.format(now.minute)
-        self.extTemp = 0
-        self.extTempOld = 1
         self.tsRightAux = False
         self.tsLeftAux = False
         self.rldwAux = False
@@ -24,11 +22,15 @@ class App(tk.Frame):
         self.lldwAuxx = False
         self.lanesAux = False
         self.lanesAuxx = False
+        self.connAux = False
+        self.extTemp = 0
+        self.extTempOld = 1
         self.tsTime = 0
         self.ldwTime = 0
         self.lanesTime = 0
-        self.right = 9
-        self.left = 9
+        self.right = 0
+        self.left = 0
+        self.camera = canrd.camera()
         # canvas overview
         tk.Frame.__init__(self, master)
         master.winfo_toplevel().title("Python Interfaces")
@@ -91,8 +93,9 @@ class App(tk.Frame):
                                  fill='',
                                  outline='white', width=3)
         self.velValue = 0
+        self.velOld = 1
         self.velHolder = self.canvas1.create_text(self.hDim/2, self.vDim/2,
-                                                  text='',
+                                                  text='0',
                                                   fill='white',
                                                   font=('Helvetica', '36',
                                                         'bold'))
@@ -166,6 +169,7 @@ class App(tk.Frame):
                                                 width=self.hDim2*.02,
                                                 state=tk.HIDDEN)
         self.speedLim = 0
+        self.limOld = 1
         self.velSignValue = self.canvas2.create_text(self.hDim2/2,
                                                      .16*self.vDim2,
                                                      fill='black',
@@ -288,7 +292,6 @@ class App(tk.Frame):
                                                       text='',
                                                       font=('Helvetica',
                                                             '18'))
-        # self.canvas2.itemconfigure(self.truck, state=tk.HIDDEN)
 
     def rotate(self, points, angle, center):
         angle = math.radians(angle)
@@ -312,7 +315,6 @@ class App(tk.Frame):
                                 self.pointsP1[0][1],
                                 self.pointsP1[1][0],
                                 self.pointsP1[1][1])
-            self.master.update()
             self.angle += 1.8
             round(self.angle, 1)
         elif op == 'dec' and self.angle >= 1.7:
@@ -322,7 +324,6 @@ class App(tk.Frame):
                                 self.pointsP1[0][1],
                                 self.pointsP1[1][0],
                                 self.pointsP1[1][1])
-            self.master.update()
             self.angle -= 1.8
             round(self.angle, 1)
             if not (0 <= self.angle <= 288):
@@ -330,6 +331,8 @@ class App(tk.Frame):
                     self.angle = 0
                 elif self.angle > 288:
                     self.angle = 288
+        sleep(.001)
+        root.update()
 
     def turnSigns(self):
         if self.tsRightAux or self.tsLeftAux:
@@ -366,29 +369,38 @@ class App(tk.Frame):
                 self.canvas2.itemconfig(app.clock,
                                         text=self._hour +
                                         ":"+self._minute)
-            self.canvas1.itemconfigure(self.velHolder,
-                                       text=int(self.velValue))
-            if self.extTemp > 0 and self.extTemp != self.extTempOld:
+            if self.extTemp >= 0 and self.extTemp != self.extTempOld:
                 self.canvas2.itemconfigure(self.extTempHolder,
                                            text=str(self.extTemp) + ' ºC')
                 self.extTempOld = self.extTemp
-            elif self.extTemp <= 0:
+            elif self.extTemp != self.extTempOld:
                 self.canvas2.itemconfigure(self.extTempHolder,
                                            text='')
-            if self.speedLim > 0:
+                self.extTempOld = self.extTemp
+            if self.speedLim > 0 and self.speedLim != self.limOld:
                 self.canvas2.itemconfigure(self.velSignValue,
                                            text=self.speedLim)
                 self.canvas2.itemconfigure(self.velSign, state=tk.NORMAL)
                 self.canvas2.itemconfigure(self.velSignValue, state=tk.NORMAL)
                 self.canvas2.itemconfigure(self.velSignUnit, state=tk.NORMAL)
-            else:
+                self.limOld = self.speedLim
+            elif self.speedLim != self.limOld:
                 self.canvas2.itemconfigure(self.velSign, state=tk.HIDDEN)
                 self.canvas2.itemconfigure(self.velSignValue, state=tk.HIDDEN)
                 self.canvas2.itemconfigure(self.velSignUnit, state=tk.HIDDEN)
-            while self.velValue > self.angle/1.8:
-                self.vAngle('inc')
-            while self.velValue < self.angle/1.8:
-                self.vAngle('dec')
+                self.limOld = self.speedLim
+            if self.velValue != self.velOld:
+                if self.velValue > 160:
+                    self.velValue = 160
+                elif self.velValue < 0:
+                    self.velValue = 0
+                while self.velValue > self.angle/1.8:
+                    self.vAngle('inc')
+                while self.velValue < self.angle/1.8:
+                    self.vAngle('dec')
+                self.velOld = self.velValue
+                self.canvas1.itemconfigure(self.velHolder,
+                                           text=self.velValue)
         except Exception as e:
             print(e)
 
@@ -450,12 +462,13 @@ class App(tk.Frame):
                                     self.truckPos[1])
 
     def ldw(self):
-        if self.right <= 1 and not self.tsLeftAux and not self.tsRightAux:
+        if self.right <= 1 and not self.tsLeftAux and \
+           not self.tsRightAux and self.lanesAux:
             if not self.rldwAux:
                 self.rldwAux = True
                 self.rldwAuxx = False
                 self.ldwTime = time()
-            elif time() - self.ldwTime >= .5 and self.lanesAux:
+            elif time() - self.ldwTime >= .5:
                 self.canvas2.itemconfig(self.rLane, fill='red')
                 self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
         else:
@@ -467,12 +480,13 @@ class App(tk.Frame):
                 self.canvas2.itemconfig(self.rLane, fill='silver')
                 if not self.lldwAux:
                     self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
-        if self.left >= -1 and not self.tsLeftAux and not self.tsRightAux:
+        if self.left >= -1 and not self.tsLeftAux and \
+           not self.tsRightAux and self.lanesAux:
             if not self.lldwAux:
                 self.lldwAux = True
                 self.lldwAuxx = False
                 self.ldwTime = time()
-            elif time() - self.ldwTime >= .5 and self.lanesAux:
+            elif time() - self.ldwTime >= .5:
                 self.canvas2.itemconfig(self.lLane, fill='red')
                 self.canvas2.itemconfigure(self.ldwHolder, state=tk.NORMAL)
         else:
@@ -485,29 +499,28 @@ class App(tk.Frame):
                 if not self.rldwAux:
                     self.canvas2.itemconfigure(self.ldwHolder, state=tk.HIDDEN)
 
+    def connectCamera(self):
+        while not self.camera.connection:
+            self.camera.connect()
+            print('.')
+            sleep(1)
+        self.connAux = False
+        if not self.camera.readingAux:
+            Thread(target=self.camera.reading, daemon=True).start()
+
 
 root = tk.Tk()
 app = App(root)
 
-'''camera = canrd.camera()
-
-time1 = time()
-while not camera.connection:
-    camera.connect()
-    if time() - time1 > 1:
-        print('.')
-        time1 = time()
-
-Thread(target=camera.reading, daemon=True).start()'''
-
 aux = True
 while aux:
     try:
+        # app.velValue = int(input('speed: '))
         '''app.velValue = random.uniform(80, 85)
-        app.right = random.uniform(2.8, 2.7)
-        app.left = random.uniform(-2.8, -2.7)'''
-        app.right = float(input('right: '))
-        app.left = float(input('left: '))
+        app.right = random.uniform(2, 1.9)
+        app.left = random.uniform(-2, -1.9)'''
+        '''app.right = float(input('right: '))
+        app.left = float(input('left: '))'''
         '''if keyboard.is_pressed('d'):
             if not app.tsRightAux:
                 if app.tsLeftAux:
@@ -530,18 +543,23 @@ while aux:
                 app.canvas2.itemconfigure(app.turnSignalRight, state=tk.HIDDEN)
                 app.tsLeftAux = False
                 app.tsRightAux = False'''
-        '''app.velValue = camera.vehSpeed
-        app.extTemp = camera.temp
-        app.left = camera.lLane
-        app.right = camera.rLane
-        app.speedLim = camera.speedLim'''
-        app.moveLanes()
-        app.turnSigns()
-        app.updateInfo()
-        app.ldw()
-        root.update()
+        if app.camera.connection:
+            app.velValue = app.camera.vehSpeed
+            app.extTemp = app.camera.temp
+            app.left = app.camera.lLane
+            app.right = app.camera.rLane
+            app.speedLim = app.camera.speedLim
+            app.moveLanes()
+            app.turnSigns()
+            app.updateInfo()
+            app.ldw()
+        else:
+            if not app.connAux:
+                Thread(target=app.connectCamera, daemon=True).start()
+                app.connAux = True
         sleep(.01)
+        root.update()
     except Exception as e:  # noqa: F841
-        print(e)
+        # print(e)
         aux = False
-        # camera.release()
+        app.camera.release()

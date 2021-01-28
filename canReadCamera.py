@@ -17,8 +17,8 @@ class camera():
         self.db = cantools.database.load_file('truck.dbc')  # can db
         self.emCount = 0  # empty message counter
         self.connection = False  # connection indicator
-        self.msgPresent = False  # valid message indicator
-        self.rLane, self.lLane = 9, 9  # lanes distance values
+        self.readingAux = False  # reading indicator
+        self.rLane, self.lLane = 0, 0  # lanes distance values
         self.conf = False  # confidence of lane signal
         self.temp, self.vehSpeed, self.speedLim = 0, 0, 0  # other values
 
@@ -35,7 +35,7 @@ class camera():
                                         self.ids[-1],
                                         pcb.PCAN_MODE_EXTENDED)
             self.connection = True
-            print(result[1].decode())
+            print('connected')
 
     def release(self):
         result = self.objPCAN.Uninitialize(pcb.PCAN_USBBUS1)
@@ -44,10 +44,11 @@ class camera():
             print(result[1].decode())
         else:
             self.connection = False
-            print(result[1].decode())
+            print('released')
 
     def reading(self):
         while self.connection:
+            self.readingAux = True
             try:
                 msg = self.objPCAN.Read(pcb.PCAN_USBBUS1)
                 if msg[0] == 0:
@@ -64,47 +65,51 @@ class camera():
                         print('Empty message')
             except Exception as e:
                 print(e)
+        self.readingAux = False
         print('no connection')
 
     def handleMsg(self, msg):
         if msg.ID == self.ids[0]:  # vehicle speed
             msg = self.db.decode_message(msg.ID, msg.DATA)
-            self.vehSpeed = msg['VehSpd_Cval_ICUC']
-            if self.vehSpeed == 'SNA':
+            vehSpeed = msg['VehSpd_Cval_ICUC']
+            if vehSpeed == 'SNA':
                 self.vehSpeed = 0
             else:
-                self.vehSpeed = round(self.vehSpeed, 2)
+                self.vehSpeed = int(vehSpeed)
         elif msg.ID == self.ids[1]:  # lanes distance
             msg = self.db.decode_message(msg.ID, msg.DATA)
-            self.lLane = msg['DistLaneLineLt_Cval_MPC']
-            self.rLane = msg['DistLaneLineRt_Cval_MPC']
-            if self.rLane == 'SNA' or self.lLane == 'SNA' or \
+            lLane = msg['DistLaneLineLt_Cval_MPC']
+            rLane = msg['DistLaneLineRt_Cval_MPC']
+            if rLane == 'SNA' or lLane == 'SNA' or \
                not self.conf:
-                self.lLane = 9
-                self.rLane = 9
+                self.lLane = 0
+                self.rLane = 0
             else:
-                self.lLane, self.rLane = round(-self.lLane, 2), \
-                                            round(-self.rLane, 2)
+                self.lLane, self.rLane = round(-lLane, 2), \
+                                            round(-rLane, 2)
         elif msg.ID == self.ids[2]:  # confidence lane value
             msg = self.db.decode_message(msg.ID, msg.DATA)
             cR = msg['ConfLaneRt_Cval_MPC']
             cL = msg['ConfLaneLt_Cval_MPC']
-            self.conf = False
+            conf = False
             if cR != 'SNA' and cL != 'SNA':
                 if 70 <= cR < 150 and 70 <= cL < 150:
-                    self.conf = True
+                    conf = True
+            self.conf = conf
         elif msg.ID == self.ids[3]:  # air temperature outside
             msg = self.db.decode_message(msg.ID, msg.DATA)
-            self.temp = msg['AirTempOutsd_Cval_SCA']
-            if self.temp == 'SNA':
+            temp = msg['AirTempOutsd_Cval_SCA']
+            if temp == 'SNA':
                 self.temp = 0
             else:
-                self.temp = round(self.temp, 1)
+                self.temp = round(temp, 1)
         elif msg.ID == self.ids[4]:  # speed limit detected
             msg = self.db.decode_message(msg.ID, msg.DATA)
-            self.speedLim = msg['RSF_SpeedLimit1Detected']
-            if self.speedLim == 'SNA':
+            speedLim = msg['RSF_SpeedLimit1Detected']
+            if speedLim == 'SNA':
                 self.speedLim = 0
+            else:
+                self.speedLim = speedLim
 
 
 '''ap = camera()
