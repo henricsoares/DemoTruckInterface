@@ -11,6 +11,7 @@ from threading import Thread
 
 class App(tk.Frame):
     def __init__(self, master):
+        master.attributes("-fullscreen", True)
         now = datetime.datetime.now()
         self._hour = '{:02d}'.format(now.hour)
         self._minute = '{:02d}'.format(now.minute)
